@@ -79,4 +79,36 @@ jobs:
           kubectl get deployments -n mlops-assignment
           kubectl get pods -n mlops-assignment
           kubectl get services -n mlops-assignment
+      
+
+      - name: Validate Helm chart
+        run: |
+          helm lint ./helm/whoami
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Deploy application with Helm
+        run: |
+          helm upgrade --install whoami-helm ./helm/whoami `
+            --namespace mlops-assignment `
+            --create-namespace `
+            --set replicaCount=3 `
+            --wait `
+            --timeout 120s
+
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Verify Helm deployment
+        run: |
+          helm list -n mlops-assignment
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl rollout status deployment/whoami-helm -n mlops-assignment --timeout=120s
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl get deployments -n mlops-assignment
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl get pods -n mlops-assignment
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
 
