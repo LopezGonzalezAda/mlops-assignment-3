@@ -57,3 +57,26 @@ jobs:
           $pod = kubectl get pods -n mlops-assignment -l name=mypod -o jsonpath="{.items[-1].metadata.name}"
           kubectl logs $pod -n mlops-assignment
           if ($LASTEXITCODE -ne 0) { exit 1 }
+      
+      - name: Deploy Kubernetes application
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl apply -f k8s/service.yaml
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Restart Kubernetes Deployment
+        run: |
+          kubectl rollout restart deployment/whoami-deployment -n mlops-assignment
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl rollout status deployment/whoami-deployment -n mlops-assignment --timeout=120s
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Verify Kubernetes resources
+        run: |
+          kubectl get deployments -n mlops-assignment
+          kubectl get pods -n mlops-assignment
+          kubectl get services -n mlops-assignment
+
