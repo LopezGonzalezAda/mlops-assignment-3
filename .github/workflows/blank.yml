@@ -16,8 +16,32 @@ jobs:
       - name: Check out code repository
         uses: actions/checkout@v7
 
-      - name: Build Docker image
-        run: docker build -t hello-world-nginx:v1 .
+      - name: Generate Docker tags
+        id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: hello-world-nginx
+          tags: |
+            type=raw,value=v1
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image with automatic tags
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          push: false
+          tags: ${{ steps.meta.outputs.tags }}
+
+      - name: Show generated tags
+        run: |
+          echo "Generated Docker image tags:"
+          echo "${{ steps.meta.outputs.tags }}"
 
       - name: Run Docker container
         run: docker run -d --name hello-world-test -p 8080:80 hello-world-nginx:v1
