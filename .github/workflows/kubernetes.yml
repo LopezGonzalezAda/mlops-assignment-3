@@ -80,7 +80,6 @@ jobs:
           kubectl get pods -n mlops-assignment
           kubectl get services -n mlops-assignment
       
-
       - name: Validate Helm chart
         run: |
           helm lint ./helm/whoami
