@@ -1,3 +1,4 @@
+
 name: My First Workflow
 
 on:
@@ -15,10 +16,18 @@ jobs:
       - name: Check out code repository
         uses: actions/checkout@v4
 
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Build Docker image
+        run: docker build -t hello-world-nginx:v1 .
 
-      - name: Run a multi-line script
+      - name: Run Docker container
+        run: docker run -d --name hello-world-test -p 8080:80 hello-world-nginx:v1
+
+      - name: Test website
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          sleep 3
+          curl --fail http://localhost:8080
+          docker logs hello-world-test
+
+      - name: Stop Docker container
+        if: always()
+        run: docker rm -f hello-world-test || true
