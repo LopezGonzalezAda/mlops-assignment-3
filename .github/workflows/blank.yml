@@ -1,0 +1,33 @@
+
+name: My First Workflow
+
+on:
+  push:
+    branches: [main, 01_DockerTest]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  first-pipeline:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out code repository
+        uses: actions/checkout@v7
+
+      - name: Build Docker image
+        run: docker build -t hello-world-nginx:v1 .
+
+      - name: Run Docker container
+        run: docker run -d --name hello-world-test -p 8080:80 hello-world-nginx:v1
+
+      - name: Test website
+        run: |
+          sleep 3
+          curl --fail http://localhost:8080
+          docker logs hello-world-test
+
+      - name: Stop Docker container
+        if: always()
+        run: docker rm -f hello-world-test || true
