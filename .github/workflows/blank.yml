@@ -47,7 +47,8 @@ jobs:
           echo "${{ steps.meta.outputs.tags }}"
 
       - name: Run Docker container
-        run: docker run -d --name hello-world-test -p 8080:80 hello-world-nginx:v1
+        run: docker run -d --name hello-world-test -p 8080:80 ghcr.io/lopezgonzalezada/hello-world-nginx:v1
+
 
       - name: Test website
         run: |
