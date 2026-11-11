@@ -1,0 +1,59 @@
+
+name: Kubernetes Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy-pod:
+    runs-on: [self-hosted, Windows, X64]
+
+    defaults:
+      run:
+        shell: powershell
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Check Kubernetes connection
+        run: |
+          kubectl config current-context
+          kubectl get nodes
+
+      - name: Create namespace
+        run: |
+          kubectl create namespace mlops-assignment --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Pod with random name
+        run: |
+          $id = (New-Guid).ToString("N").Substring(0, 8)
+          $podName = "mypod-$id"
+
+          Write-Host "Generated Pod name: $podName"
+
+          $yaml = Get-Content "k8s/pod.yaml" -Raw
+          $yaml = $yaml.Replace("mypod-{ID}", $podName)
+
+          $yaml | Set-Content "k8s/pod-generated.yaml"
+
+          kubectl apply -f "k8s/pod-generated.yaml"
+
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl wait --for=condition=Ready "pod/$podName" -n mlops-assignment --timeout=120s
+
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+          kubectl get pods -n mlops-assignment
+
+      - name: Show running Pods
+        run: |
+          kubectl get pods -n mlops-assignment -o wide
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Show Pod logs
+        run: |
+          $pod = kubectl get pods -n mlops-assignment -l name=mypod -o jsonpath="{.items[-1].metadata.name}"
+          kubectl logs $pod -n mlops-assignment
+          if ($LASTEXITCODE -ne 0) { exit 1 }
